@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Visualization for the ROB102 planning projects.",
   "main": "main.js",
-  "homepage": "https://rob102.github.io/nav-app",
+  "homepage": "https://robotics102.github.io/nav-app",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
