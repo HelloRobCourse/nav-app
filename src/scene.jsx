@@ -10,6 +10,7 @@ import config from "./config.js";
 import { DrawRobot, RobotPathFollower } from "./robot";
 import { parseMap, normalizeList } from "./map.js";
 import { colourStringToRGB, getColor, GridCellCanvas } from "./drawing"
+import { Button, TextField } from "@mui/material";
 
 /*******************
  *     BUTTONS
@@ -96,6 +97,8 @@ class SceneView extends React.Component {
       finished_planning: false, // The path planner has finished running.
       step: 0,
 
+      planfile_text: "",
+
       // Robot parameters.
       x: config.MAP_DISPLAY_WIDTH / 2,
       y: config.MAP_DISPLAY_WIDTH / 2,
@@ -163,8 +166,20 @@ class SceneView extends React.Component {
 
   }
 
-  updateWithPlanfileJson(planfile_json) {
-    this.parseAndUpdateMap(planfile_json["map"]);
+  onPlannerFileTextUpload(text) {
+
+    // First check that the json is valid
+    try {
+      var planfile_json = JSON.parse(text);
+    } catch (e) {
+      console.log("Invalid planner file JSON submitted.");
+      return;
+    }
+    this.updateWithPlanfileJson(planfile_json);
+  }
+
+  async updateWithPlanfileJson(planfile_json) {
+    await this.parseAndUpdateMap(planfile_json["map"]);
     this.setState({
       planfile_loaded: true,
       planfile_json: planfile_json
@@ -176,9 +191,9 @@ class SceneView extends React.Component {
 
 
   // Take a mapfile string, and parse and update the map
-  parseAndUpdateMap(mapfile_string) {
+  async parseAndUpdateMap(mapfile_string) {
     var map = parseMap(mapfile_string);
-    this.updateMap(map);
+    await this.updateMap(map);
   }
 
   // When called, this shows all the cells that the robot has visited,
@@ -242,7 +257,7 @@ class SceneView extends React.Component {
     }
 
     var cell = path[step];
-    
+
     // set robot position to cell position
     var cell_pixels = this.posToPixels(cell[0], cell[1]);
     this.setRobotPos(cell_pixels[1], cell_pixels[0]);
@@ -337,8 +352,9 @@ class SceneView extends React.Component {
    *      HELPERS
    ********************/
 
-  updateMap(result) {
-    this.setState({
+  async updateMap(result) {
+    this.state.cellSize = config.MAP_DISPLAY_WIDTH / result.width;
+    await this.setState({
       cells: [...result.cells],
       width: result.width,
       height: result.height,
@@ -455,41 +471,49 @@ class SceneView extends React.Component {
             showField={this.state.showField} fieldVal={this.state.fieldHoverVal} />
         </div>
 
-        <div className="canvas-container" style={canvasStyle}>
-          <GridCellCanvas id="mapCanvas"
-            cells={this.state.cells}
-            colours={this.mapColours}
-            width={this.state.width} height={this.state.height}
-            canvasSize={config.MAP_DISPLAY_WIDTH} />
-          {this.state.showField &&
-            <GridCellCanvas id={"fieldCanvas"} cells={this.state.field}
-              colours={this.fieldColours}
-              alpha={config.FIELD_ALPHA}
+        <div className="canvas-text-entry-wrapper">
+          <div className="text-entry-and-button">
+            <div className="planner-file-entry">
+              <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
+              <Button onClick={() => {this.onPlannerFileTextUpload(this.state.planfile_text)}}>Submit</Button>
+            </div>
+          </div>
+          <div className="canvas-container" style={canvasStyle}>
+            <GridCellCanvas id="mapCanvas"
+              cells={this.state.cells}
+              colours={this.mapColours}
               width={this.state.width} height={this.state.height}
               canvasSize={config.MAP_DISPLAY_WIDTH} />
-          }
-          <GridCellCanvas id="visitCellsCanvas"
-            cells={this.state.visitCells}
-            colours={this.state.visitCellColours}
-            width={this.state.width} height={this.state.height}
-            cellScale={config.SMALL_CELL_SCALE}
-            canvasSize={config.MAP_DISPLAY_WIDTH} />
-          <GridCellCanvas id="cellsCanvas"
-            cells={this.state.markedCells}
-            colours={this.state.markedColours}
-            width={this.state.width} height={this.state.height}
-            cellScale={config.SMALL_CELL_SCALE}
-            canvasSize={config.MAP_DISPLAY_WIDTH} />
+            {this.state.showField &&
+              <GridCellCanvas id={"fieldCanvas"} cells={this.state.field}
+                colours={this.fieldColours}
+                alpha={config.FIELD_ALPHA}
+                width={this.state.width} height={this.state.height}
+                canvasSize={config.MAP_DISPLAY_WIDTH} />
+            }
+            <GridCellCanvas id="visitCellsCanvas"
+              cells={this.state.visitCells}
+              colours={this.state.visitCellColours}
+              width={this.state.width} height={this.state.height}
+              cellScale={config.SMALL_CELL_SCALE}
+              canvasSize={config.MAP_DISPLAY_WIDTH} />
+            <GridCellCanvas id="cellsCanvas"
+              cells={this.state.markedCells}
+              colours={this.state.markedColours}
+              width={this.state.width} height={this.state.height}
+              cellScale={config.SMALL_CELL_SCALE}
+              canvasSize={config.MAP_DISPLAY_WIDTH} />
 
-          <DrawRobot x={this.state.x} y={this.state.y} theta={this.state.theta}
-            pixelsPerMeter={this.state.pixelsPerMeter} />
-          <canvas ref={this.clickCanvas} id="clickCanvas"
-            width={config.MAP_DISPLAY_WIDTH}
-            height={config.MAP_DISPLAY_WIDTH}
-            onMouseDown={(e) => this.handleMouseDown(e)}
-            onMouseMove={(e) => this.handleMouseMove(e)}
-            onMouseUp={() => this.handleMouseUp()}>
-          </canvas>
+            <DrawRobot x={this.state.x} y={this.state.y} theta={this.state.theta}
+              pixelsPerMeter={this.state.pixelsPerMeter} />
+            <canvas ref={this.clickCanvas} id="clickCanvas"
+              width={config.MAP_DISPLAY_WIDTH}
+              height={config.MAP_DISPLAY_WIDTH}
+              onMouseDown={(e) => this.handleMouseDown(e)}
+              onMouseMove={(e) => this.handleMouseMove(e)}
+              onMouseUp={() => this.handleMouseUp()}>
+            </canvas>
+          </div>
         </div>
       </div>
     );
