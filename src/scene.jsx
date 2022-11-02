@@ -1,20 +1,13 @@
 import React from "react";
 
-import InputLabel from '@mui/material/InputLabel';
 import Slider from "@mui/material/Slider";
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
 
 import config from "./config.js";
 import { DrawRobot, RobotPathFollower } from "./robot";
-import { parseMap, normalizeList } from "./map.js";
-import { colourStringToRGB, getColor, GridCellCanvas } from "./drawing"
+import { parseMap } from "./map.js";
+import { GridCellCanvas } from "./drawing"
 import { Button, TextField } from "@mui/material";
 
-/*******************
- *     BUTTONS
- *******************/
 
 /*******************
  *   Special File Upload Button
@@ -185,6 +178,7 @@ class SceneView extends React.Component {
       planfile_json: planfile_json
     });
     this.setGoal(planfile_json["goal"]);
+    this.setPath(planfile_json["path"]);
     let start_rob_pixels = this.cellToPixel(planfile_json["start"][0], planfile_json["start"][1]);
     this.setRobotPos(start_rob_pixels[0], start_rob_pixels[1]);
   }
@@ -234,10 +228,6 @@ class SceneView extends React.Component {
     if (plan["visited_cells"].length === step) {
       // this.setMarkedCells([], [], plan, true);
       this.setState({ is_planning: false, finished_planning: true });
-      this.setState({
-        markedCells: plan["path"],
-        markedColours: new Array(plan["path"].length).fill(config.CLICKED_CELL_COLOUR),
-      })
       this.onMoveRobot(plan["path"], 0); // start moving the robot
       return;
     }
@@ -282,6 +272,12 @@ class SceneView extends React.Component {
     if (pause_state) {
       this.onPlanUpdate(this.state.planfile_json, this.state.step);
     }
+  }
+
+  setPath(path) {
+    this.setState({
+      path: path
+    });
   }
 
   // Callback for when the user clicks the "Reset" button.
@@ -430,9 +426,9 @@ class SceneView extends React.Component {
   // transform an x_0,y_0 coordinate in the robot coordinate frame
   // to an x_1, y_1 coordinate in the canvas coordinate frame.
   posToPixels(x, y) {
-    const u = ( x - this.state.origin[0] ) * this.state.cellSize;
-    const v = ( y - this.state.origin[1] ) * this.state.cellSize;
-  
+    const u = (x - this.state.origin[0]) * this.state.cellSize;
+    const v = (y - this.state.origin[1]) * this.state.cellSize;
+
     return [u, v];
   }
 
@@ -520,6 +516,12 @@ class SceneView extends React.Component {
               width={this.state.width} height={this.state.height}
               cellScale={config.SMALL_CELL_SCALE}
               canvasSize={config.MAP_DISPLAY_WIDTH} />
+            <GridCellCanvas id="pathCellsCanvas"
+              cells={this.state.path}
+              colours={new Array(this.state.path.length).fill(config.PATH_COLOUR)}
+              width={this.state.width} height={this.state.height}
+              cellScale={config.SMALL_CELL_SCALE}
+              canvasSize={config.MAP_DISPLAY_WIDTH} />
             <GridCellCanvas id="cellsCanvas"
               cells={this.state.markedCells}
               colours={this.state.markedColours}
@@ -538,7 +540,7 @@ class SceneView extends React.Component {
             </canvas>
           </div>
         </div>
-      </div>
+      </div>  
     );
   }
 }

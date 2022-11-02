@@ -16,8 +16,8 @@ var config = {
     FIELD_COLOUR_HIGH: "#444444",    // White
     FIELD_COLOUR_LOW: "#ffffff",     // Grey
     FIELD_ALPHA: "99",
-    PATH_COLOUR: "#00B2A9",          // Taubman Teal
-    VISITED_CELL_COLOUR: "#989C97",  // Angell Hall Ash
+    PATH_COLOUR: "#65009c",          // Purple
+    VISITED_CELL_COLOUR: "#d6d6d6",  // light grey
     CLICKED_CELL_COLOUR: "#FFCB05",  // Maize
     GOAL_CELL_COLOUR: "#00ff00",
     BAD_GOAL_COLOUR: "#ff0000",
