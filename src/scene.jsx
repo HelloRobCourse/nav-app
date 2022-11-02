@@ -471,13 +471,15 @@ class SceneView extends React.Component {
             showField={this.state.showField} fieldVal={this.state.fieldHoverVal} />
         </div>
 
-        <div className="canvas-text-entry-wrapper">
-          <div className="text-entry-and-button">
-            <div className="planner-file-entry">
-              <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
-              <Button onClick={() => {this.onPlannerFileTextUpload(this.state.planfile_text)}}>Submit</Button>
-            </div>
+        <div className="text-entry-and-button">
+          <div className="planner-file-entry">
+            <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
+            <Button onClick={() => { this.onPlannerFileTextUpload(this.state.planfile_text) }}>Submit</Button>
           </div>
+        </div>
+
+        <div className="canvas-text-entry-wrapper">
+
           <div className="canvas-container" style={canvasStyle}>
             <GridCellCanvas id="mapCanvas"
               cells={this.state.cells}
