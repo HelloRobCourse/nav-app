@@ -186,7 +186,7 @@ class SceneView extends React.Component {
     });
     this.setGoal(planfile_json["goal"]);
     let start_rob_pixels = this.cellToPixel(planfile_json["start"][0], planfile_json["start"][1]);
-    this.setRobotPos(start_rob_pixels[1], start_rob_pixels[0]);
+    this.setRobotPos(start_rob_pixels[0], start_rob_pixels[1]);
   }
 
   onMapFileUpload(file) {
@@ -269,7 +269,7 @@ class SceneView extends React.Component {
 
     // set robot position to cell position
     var cell_pixels = this.cellToPixel(cell[0], cell[1]);
-    this.setRobotPos(cell_pixels[1], cell_pixels[0]);
+    this.setRobotPos(cell_pixels[0], cell_pixels[1]);
 
     setTimeout(() => this.onMoveRobot(path, step + 1), this.state.plan_speed_base - this.state.plan_speedup);
   }
