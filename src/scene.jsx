@@ -189,6 +189,15 @@ class SceneView extends React.Component {
     this.setRobotPos(start_rob_pixels[1], start_rob_pixels[0]);
   }
 
+  onMapFileUpload(file) {
+    this.setState({ mapfile: file });
+    var reader = new FileReader();
+    reader.onload = (e) => {
+      let map = e.target.result;
+      this.parseAndUpdateMap(map);
+    }
+    reader.readAsText(file);
+  };
 
   // Take a mapfile string, and parse and update the map
   async parseAndUpdateMap(mapfile_string) {
@@ -440,6 +449,7 @@ class SceneView extends React.Component {
     return (
       <div>
         <div className="button-wrapper">
+          <FileUploader filetype=".map" buttonText={"Upload Map File"} handleFile={(event) => { this.onMapFileUpload(event) }} />
           <FileUploader filetype=".planner" buttonText={"Upload Planner File"} handleFile={(event) => { this.onPlannerFileUpload(event) }} />
           {
             (this.state.mapLoaded && this.state.planfile_loaded && !this.state.is_planning) &&
