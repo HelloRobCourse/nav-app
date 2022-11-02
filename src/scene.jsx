@@ -185,7 +185,7 @@ class SceneView extends React.Component {
       planfile_json: planfile_json
     });
     this.setGoal(planfile_json["goal"]);
-    let start_rob_pixels = this.posToPixels(planfile_json["start"][0], planfile_json["start"][1]);
+    let start_rob_pixels = this.cellToPixel(planfile_json["start"][0], planfile_json["start"][1]);
     this.setRobotPos(start_rob_pixels[1], start_rob_pixels[0]);
   }
 
@@ -268,7 +268,7 @@ class SceneView extends React.Component {
     var cell = path[step];
 
     // set robot position to cell position
-    var cell_pixels = this.posToPixels(cell[0], cell[1]);
+    var cell_pixels = this.cellToPixel(cell[0], cell[1]);
     this.setRobotPos(cell_pixels[1], cell_pixels[0]);
 
     setTimeout(() => this.onMoveRobot(path, step + 1), this.state.plan_speed_base - this.state.plan_speedup);
@@ -427,17 +427,28 @@ class SceneView extends React.Component {
     });
   }
 
+  // transform an x_0,y_0 coordinate in the robot coordinate frame
+  // to an x_1, y_1 coordinate in the canvas coordinate frame.
   posToPixels(x, y) {
-    var u = (x * this.state.cellSize);
-    var v = (y * this.state.cellSize);
-
+    const u = ( x - this.state.origin[0] ) * this.state.cellSize;
+    const v = ( y - this.state.origin[1] ) * this.state.cellSize;
+  
     return [u, v];
   }
 
+  // Transform an x,y pixel from the canvas coordinate frame to 
+  // the corresponding cell in the map.
   pixelsToCell(u, v) {
-    var row = Math.floor(v / this.state.cellSize);
     var col = Math.floor(u / this.state.cellSize);
-    return [row, col];
+    var row = Math.floor(v / this.state.cellSize);
+    return [col, row];
+  }
+
+  // Convert a cell in the map to the corresponding x,y pixel in the canvas.
+  cellToPixel(col, row) {
+    var u = col * this.state.cellSize;
+    var v = row * this.state.cellSize;
+    return [u, v];
   }
 
   render() {
