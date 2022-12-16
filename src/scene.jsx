@@ -4,7 +4,7 @@ import Slider from "@mui/material/Slider";
 
 import config from "./config.js";
 import { DrawRobot, RobotPathFollower } from "./robot";
-import { parseMap } from "./map.js";
+import { parseMap, normalizeList } from "./map.js";
 import { GridCellCanvas } from "./drawing"
 import { Button, TextField } from "@mui/material";
 
@@ -175,7 +175,9 @@ class SceneView extends React.Component {
     await this.parseAndUpdateMap(planfile_json["map"]);
     this.setState({
       planfile_loaded: true,
-      planfile_json: planfile_json
+      planfile_json: planfile_json,
+      fieldRaw: [...planfile_json["dt"]],
+      field: normalizeList(planfile_json["dt"]),
     });
     this.setGoal(planfile_json["goal"]);
     this.setPath(planfile_json["path"]);
@@ -336,7 +338,7 @@ class SceneView extends React.Component {
     }
     if (this.state.showField && this.state.fieldRaw.length > 0) {
       var cell = this.pixelsToCell(x, y);
-      var idx = Math.max(Math.min(cell[1] + cell[0] * this.state.width, this.state.num_cells - 1), 0);
+      var idx = Math.max(Math.min(cell[0] + cell[1] * this.state.width, this.state.num_cells - 1), 0);
       this.setState({ fieldHoverVal: this.state.fieldRaw[idx] });
     }
   }
@@ -371,6 +373,7 @@ class SceneView extends React.Component {
       mapLoaded: result.cells.length > 0,
       // Reset all the relevant app properties.
       field: [],
+      fieldRaw: [],
       visitCells: [],
       visitCellColours: [],
       path: [],
@@ -476,7 +479,8 @@ class SceneView extends React.Component {
 
         <div className="status-wrapper">
           <div className="field-toggle-wrapper">
-            <Slider value={this.state.plan_speedup ? this.state.plan_speedup : 1} onChange={(_, v) => this.onPlanSpeedupChange(_, v)}></Slider>
+            <Slider value={this.state.plan_speedup ? this.state.plan_speedup : 1}
+                    onChange={(_, v) => this.onPlanSpeedupChange(_, v)}></Slider>
             <span>Show Field:</span>
             <label className="switch">
               <input type="checkbox" onClick={() => this.onFieldCheck()} />
@@ -490,7 +494,8 @@ class SceneView extends React.Component {
 
         <div className="text-entry-and-button">
           <div className="planner-file-entry">
-            <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
+            <TextField placeholder="planner file text" value={this.planfile_text}
+                       onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
             <Button onClick={() => { this.onPlannerFileTextUpload(this.state.planfile_text) }}>Submit</Button>
           </div>
         </div>
@@ -504,7 +509,7 @@ class SceneView extends React.Component {
               width={this.state.width} height={this.state.height}
               canvasSize={config.MAP_DISPLAY_WIDTH} />
             {this.state.showField &&
-              <GridCellCanvas id={"fieldCanvas"} cells={this.state.field}
+              <GridCellCanvas id="fieldCanvas" cells={this.state.field}
                 colours={this.fieldColours}
                 alpha={config.FIELD_ALPHA}
                 width={this.state.width} height={this.state.height}
