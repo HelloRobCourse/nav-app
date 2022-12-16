@@ -108,9 +108,10 @@ class GridCellCanvas extends React.Component {
     return this.cellStates[this.getCellIdx(idx[0], idx[1])];
   }
 
+  // TODO CHECK HERE 
   drawCell(cell, size, color, scale=1) {
-    var i = cell[1];
-    var j = cell[0];
+    var i = cell[0];
+    var j = cell[1];
     var shift = size * (1 - scale) / 2;
     var start_x = i * size + shift;
     var start_y = j * size + shift;
@@ -132,7 +133,7 @@ class GridCellCanvas extends React.Component {
       for (var j = 0; j < this.props.height; j++) {
         var prob = cells[this.getCellIdx(i, j)];
         var color = getColor(prob, colour_low, colour_high);
-        this.drawCell([j, i], this.cellSize, color + alpha);
+        this.drawCell([i, j], this.cellSize, color + alpha);
       }
     }
   }

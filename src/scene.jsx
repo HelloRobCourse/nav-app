@@ -1,20 +1,13 @@
 import React from "react";
 
-import InputLabel from '@mui/material/InputLabel';
 import Slider from "@mui/material/Slider";
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
-import Select from '@mui/material/Select';
 
 import config from "./config.js";
 import { DrawRobot, RobotPathFollower } from "./robot";
-import { parseMap, normalizeList } from "./map.js";
-import { colourStringToRGB, getColor, GridCellCanvas } from "./drawing"
+import { parseMap } from "./map.js";
+import { GridCellCanvas } from "./drawing"
 import { Button, TextField } from "@mui/material";
 
-/*******************
- *     BUTTONS
- *******************/
 
 /*******************
  *   Special File Upload Button
@@ -185,10 +178,20 @@ class SceneView extends React.Component {
       planfile_json: planfile_json
     });
     this.setGoal(planfile_json["goal"]);
-    let start_rob_pixels = this.posToPixels(planfile_json["start"][0], planfile_json["start"][1]);
-    this.setRobotPos(start_rob_pixels[1], start_rob_pixels[0]);
+    this.setPath(planfile_json["path"]);
+    let start_rob_pixels = this.cellToPixel(planfile_json["start"][0], planfile_json["start"][1]);
+    this.setRobotPos(start_rob_pixels[0], start_rob_pixels[1]);
   }
 
+  onMapFileUpload(file) {
+    this.setState({ mapfile: file });
+    var reader = new FileReader();
+    reader.onload = (e) => {
+      let map = e.target.result;
+      this.parseAndUpdateMap(map);
+    }
+    reader.readAsText(file);
+  };
 
   // Take a mapfile string, and parse and update the map
   async parseAndUpdateMap(mapfile_string) {
@@ -225,10 +228,6 @@ class SceneView extends React.Component {
     if (plan["visited_cells"].length === step) {
       // this.setMarkedCells([], [], plan, true);
       this.setState({ is_planning: false, finished_planning: true });
-      this.setState({
-        markedCells: plan["path"],
-        markedColours: new Array(plan["path"].length).fill(config.CLICKED_CELL_COLOUR),
-      })
       this.onMoveRobot(plan["path"], 0); // start moving the robot
       return;
     }
@@ -259,8 +258,8 @@ class SceneView extends React.Component {
     var cell = path[step];
 
     // set robot position to cell position
-    var cell_pixels = this.posToPixels(cell[0], cell[1]);
-    this.setRobotPos(cell_pixels[1], cell_pixels[0]);
+    var cell_pixels = this.cellToPixel(cell[0], cell[1]);
+    this.setRobotPos(cell_pixels[0], cell_pixels[1]);
 
     setTimeout(() => this.onMoveRobot(path, step + 1), this.state.plan_speed_base - this.state.plan_speedup);
   }
@@ -273,6 +272,12 @@ class SceneView extends React.Component {
     if (pause_state) {
       this.onPlanUpdate(this.state.planfile_json, this.state.step);
     }
+  }
+
+  setPath(path) {
+    this.setState({
+      path: path
+    });
   }
 
   // Callback for when the user clicks the "Reset" button.
@@ -418,17 +423,28 @@ class SceneView extends React.Component {
     });
   }
 
+  // transform an x_0,y_0 coordinate in the robot coordinate frame
+  // to an x_1, y_1 coordinate in the canvas coordinate frame.
   posToPixels(x, y) {
-    var u = (x * this.state.cellSize);
-    var v = (y * this.state.cellSize);
+    const u = (x - this.state.origin[0]) * this.state.cellSize;
+    const v = (y - this.state.origin[1]) * this.state.cellSize;
 
     return [u, v];
   }
 
+  // Transform an x,y pixel from the canvas coordinate frame to 
+  // the corresponding cell in the map.
   pixelsToCell(u, v) {
-    var row = Math.floor(v / this.state.cellSize);
     var col = Math.floor(u / this.state.cellSize);
-    return [row, col];
+    var row = Math.floor(v / this.state.cellSize);
+    return [col, row];
+  }
+
+  // Convert a cell in the map to the corresponding x,y pixel in the canvas.
+  cellToPixel(col, row) {
+    var u = col * this.state.cellSize;
+    var v = row * this.state.cellSize;
+    return [u, v];
   }
 
   render() {
@@ -440,6 +456,7 @@ class SceneView extends React.Component {
     return (
       <div>
         <div className="button-wrapper">
+          <FileUploader filetype=".map" buttonText={"Upload Map File"} handleFile={(event) => { this.onMapFileUpload(event) }} />
           <FileUploader filetype=".planner" buttonText={"Upload Planner File"} handleFile={(event) => { this.onPlannerFileUpload(event) }} />
           {
             (this.state.mapLoaded && this.state.planfile_loaded && !this.state.is_planning) &&
@@ -471,13 +488,15 @@ class SceneView extends React.Component {
             showField={this.state.showField} fieldVal={this.state.fieldHoverVal} />
         </div>
 
-        <div className="canvas-text-entry-wrapper">
-          <div className="text-entry-and-button">
-            <div className="planner-file-entry">
-              <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
-              <Button onClick={() => {this.onPlannerFileTextUpload(this.state.planfile_text)}}>Submit</Button>
-            </div>
+        <div className="text-entry-and-button">
+          <div className="planner-file-entry">
+            <TextField placeholder="planner file text" value={this.planfile_text} onChange={(event) => { this.setState({ planfile_text: event.target.value }) }}></TextField>
+            <Button onClick={() => { this.onPlannerFileTextUpload(this.state.planfile_text) }}>Submit</Button>
           </div>
+        </div>
+
+        <div className="canvas-text-entry-wrapper">
+
           <div className="canvas-container" style={canvasStyle}>
             <GridCellCanvas id="mapCanvas"
               cells={this.state.cells}
@@ -494,6 +513,12 @@ class SceneView extends React.Component {
             <GridCellCanvas id="visitCellsCanvas"
               cells={this.state.visitCells}
               colours={this.state.visitCellColours}
+              width={this.state.width} height={this.state.height}
+              cellScale={config.SMALL_CELL_SCALE}
+              canvasSize={config.MAP_DISPLAY_WIDTH} />
+            <GridCellCanvas id="pathCellsCanvas"
+              cells={this.state.path}
+              colours={new Array(this.state.path.length).fill(config.PATH_COLOUR)}
               width={this.state.width} height={this.state.height}
               cellScale={config.SMALL_CELL_SCALE}
               canvasSize={config.MAP_DISPLAY_WIDTH} />
@@ -515,7 +540,7 @@ class SceneView extends React.Component {
             </canvas>
           </div>
         </div>
-      </div>
+      </div>  
     );
   }
 }
